@@ -30,8 +30,17 @@ struct EEPROMPortData
     uint32 v;
 };
 
+struct EEPROMPalette
+{
+    CRGB colors[21];
+};
+
 void fillPortData(EEPROMPortData *portData);
 
 void savePortData(EEPROMPortData *portData);
+
+void fillPaletteData(EEPROMPalette *paletteData);
+
+void savePaletteData(EEPROMPalette *paletteData);
 
 #endif

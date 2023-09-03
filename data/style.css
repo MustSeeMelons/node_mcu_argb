@@ -88,6 +88,9 @@ body {
     box-shadow: none;
     background-color: #212529;
     text-transform: uppercase;
+    font-size: 10px !important;
+    line-height: 10px !important;
+    height: 100% !important;
 }
 
 .picker_done > button:hover {
@@ -146,7 +149,7 @@ h5 {
 }
 
 .presets {
-    width: 105px;
+    width: 120px;
     height: 100%;
     background-color: #F2F2F2;
     margin: 0 !important;
@@ -159,6 +162,8 @@ h5 {
     justify-content: space-between;
     padding-bottom: 10px;
     align-items: center;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
 }
 
 .preset-tile-container {
@@ -169,12 +174,137 @@ h5 {
 }
 
 .preset-tile {
+    position: relative;
     width: 30px;
     height: 30px;
+    border-radius: 7px;
+    cursor: pointer;
 }
 
-.reset-btn {
-    box-shadow: none !important;
-    background-image: none !important;
-    background-color: white !important;
+.delete {
+   font-size: 20px;
+   line-height: 20px;
+   margin-top: 10px;
+   margin-bottom: 10px;
+   cursor: pointer;
+}
+
+.delete:hover {
+    opacity: 0.8;
+    transform: scale(1.1);
+}
+
+.tile-plus {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    opacity: 0.4;
+    border-radius: 7px;
+}
+
+.tile-plus-hover .horizontal-bar {
+    opacity: 0;
+}
+
+.tile-plus-hover .vertical-bar {
+    opacity: 0;
+}
+
+.preset-tile:hover .tile-plus-hover {
+    position: absolute;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    opacity: 0.4;
+    border-radius: 7px;
+    
+}
+
+.preset-tile:hover .tile-plus-hover .vertical-bar {
+    transition: opacity 0.25s;
+    opacity: 1;
+}
+
+.preset-tile:hover .tile-plus-hover .horizontal-bar {
+    opacity: 1;
+    transition: opacity 0.25s;
+}
+
+.vertical-bar {
+    position: absolute;
+    background-color: #636363;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    height: 80%;
+    width: 10%;
+}
+
+.horizontal-bar {
+    position: absolute;
+    background-color: #636363;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    height: 10%;
+    width: 80%;
+}
+
+.tile-selected {
+    border: 1px solid white !important;
+    outline: 2px solid black !important;
+}
+
+@keyframes jiggle {
+    0% {
+        transform: rotate(-3deg) scale(1.1);
+        
+    }
+    50% {
+        transform: rotate(3deg) scale(1.1);
+    }
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+.jiggle {
+    animation: jiggle 0.3s ease-in-out infinite;
+    transition: scale 0.3s;
+   
+}
+
+.picker_sample {
+    border-radius: 5px;
+    box-shadow: none;
+}
+
+.picker_sample::before {
+    border-radius: 5px;
+}
+
+.picker_done button {
+    border-radius: 5px;
+}
+
+.picker_editor {
+    border-radius: 5px;
+}
+
+.picker_editor input {
+    border-radius: 5px;
+}
+
+.picker_s1 {
+    border-radius: 2px;
+}
+
+.picker_hue {
+    border-radius: 3px;
+}
+
+.picker_wrapper {
+    border-bottom-left-radius: 5px;
+    padding-right: 0px;
 }

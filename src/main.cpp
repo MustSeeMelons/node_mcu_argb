@@ -62,6 +62,8 @@ struct PortConfiguration PortD6 = {
     true,
     CRGB::Red};
 
+EEPROMPalette palette = {CRGB(0, 0, 0)};
+
 PortConfiguration *currentPort;
 
 void *d1Pointer;
@@ -189,9 +191,19 @@ void handleSinglePortLoad(PortConfiguration *port, JsonArray *ports)
 
 void handleLoad()
 {
-  StaticJsonDocument<1024> response;
+  StaticJsonDocument<2048> response;
 
   response["brightness"] = FastLED.getBrightness();
+
+  JsonArray paletteColors = response.createNestedArray("paletteColors");
+
+  for (size_t i = 0; i < paletteColorCount; i++)
+  {
+    auto color = paletteColors.createNestedObject();
+    color["r"] = palette.colors[i].r;
+    color["g"] = palette.colors[i].g;
+    color["b"] = palette.colors[i].b;
+  }
 
   JsonArray ports = response.createNestedArray("ports");
 
@@ -336,6 +348,30 @@ void handleCommit()
   server.send(200, "text/plain", "Commited!");
 }
 
+void handlePalette()
+{
+  bool hasBody = server.hasArg("plain");
+
+  if (!hasBody)
+  {
+    server.send(200, "text/plain", "no body mate!");
+    return;
+  }
+
+  StaticJsonDocument<1024> request;
+  deserializeJson(request, server.arg("plain"));
+
+  uint8_t index = int(request["index"]);
+
+  palette.colors[index].r = int(request["color"]["r"]);
+  palette.colors[index].g = int(request["color"]["g"]);
+  palette.colors[index].b = int(request["color"]["b"]);
+
+  savePaletteData(&palette);
+
+  EEPROM.commit();
+}
+
 void assignPort(PortConfiguration *target, PortConfiguration *source)
 {
   target->id = source->id;
@@ -381,6 +417,8 @@ void setup()
     assignPort(&PortD6, &portData.d6);
 
     FastLED.setBrightness(portData.brightness);
+
+    fillPaletteData(&palette);
   }
   else
   {
@@ -425,6 +463,7 @@ void setup()
   server.on("/save", handleSave);
   server.on("/commit", handleCommit);
   server.on("/brightness", handleBrightness);
+  server.on("/palette", handlePalette);
   server.onNotFound(handleNotFound);
 
   server.begin();

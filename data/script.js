@@ -4,8 +4,17 @@
 let apiData;
 
 let isLocked = true;
+let pickerIndex = undefined;
+let yeetMode = false; // For resetting swatch colors
 
-window.addEventListener("contextmenu", (e) => e.preventDefault());
+const rgbToHex = (r, g, b) =>
+  "#" +
+  [r, g, b]
+    .map((x) => {
+      const hex = x.toString(16);
+      return hex.length === 1 ? "0" + hex : hex;
+    })
+    .join("");
 
 const extractRgb = (rgbString) => rgbString.match(/\d+/g).map(Number);
 
@@ -63,8 +72,20 @@ const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
     onChange(color);
   };
 
+  const updateTileStyle = (rgbObj, tile) => {
+    if (rgbObj.r === 0 && rgbObj.g === 0 && rgbObj.b === 0) {
+      tile.style.backgroundColor = "#e7e7e7";
+      tile.style.border = "1px solid #c3c3c3";
+    } else {
+      tile.style.backgroundColor = rgbToHex(rgbObj.r, rgbObj.g, rgbObj.b);
+      tile.style.border = "unset";
+    }
+  };
+
   // Ad-hoc our palette to the picker
   pickerContainer.addEventListener("click", () => {
+    pickerIndex = undefined;
+
     const renderPresetTiles = (parent) => {
       const container = document.createElement("div");
       container.classList.add("preset-tile-container");
@@ -74,29 +95,61 @@ const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
         tile.classList.add("preset-tile");
 
         tile.addEventListener("mousedown", (e) => {
-          switch (e.button) {
-            case 0:
-              const color = tile.style.backgroundColor;
-              const rgb = extractRgb(color);
+          e.stopPropagation();
 
-              picker.setOptions({
-                color: rgb,
-              });
-
-              // TODO update api data!
-
-              break;
-            case 2:
-              tile.style.backgroundColor = pickerContainer.style.background;
-
-              // TODO update api data!
-              break;
+          if (e.button !== 0) {
+            return;
           }
+
+          pickerIndex = i;
+
+          if (yeetMode) {
+            apiData.paletteColors[i] = { r: 0, g: 0, b: 0 };
+            updateTileStyle({ r: 0, g: 0, b: 0 }, tile);
+            updateAllTileExtras(
+              pickerContainer.querySelector(".picker_wrapper")
+            );
+
+            return;
+          }
+
+          const apiRgb = apiData.paletteColors[i];
+
+          // If we have no color - add color
+          if (apiRgb.r === 0 && apiRgb.g === 0 && apiRgb.b === 0) {
+            const rgb = extractRgb(pickerContainer.style.background);
+
+            updateTileStyle({ r: rgb[0], g: rgb[1], b: rgb[2] }, tile);
+
+            apiData.paletteColors[i] = {
+              r: rgb[0],
+              g: rgb[1],
+              b: rgb[2],
+            };
+
+            updateAllTileExtras(
+              pickerContainer.querySelector(".picker_wrapper")
+            );
+
+            return;
+          }
+
+          // If we have a color - apply it to the picker
+          const color = tile.style.backgroundColor;
+          const rgb = extractRgb(color);
+
+          picker.setOptions({
+            color: rgb,
+          });
+
+          updateTileStyle({ r: rgb[0], g: rgb[1], b: rgb[2] }, tile);
+
+          updateAllTileExtras(pickerContainer.querySelector(".picker_wrapper"));
         });
 
-        tile.style.backgroundColor = `#${Math.floor(
-          Math.random() * 16777215
-        ).toString(16)}`;
+        const rgb = apiData.paletteColors[i];
+
+        updateTileStyle(rgb, tile);
 
         container.appendChild(tile);
       }
@@ -107,25 +160,113 @@ const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
     setTimeout(() => {
       const picker = pickerContainer.querySelector(".picker_wrapper");
 
+      picker.addEventListener("click", (e) => e.stopPropagation());
+
       if (!picker.querySelector(".presets")) {
         const presets = document.createElement("div");
         presets.classList.add("presets");
+
         renderPresetTiles(presets);
+        updateAllTileExtras(presets);
 
-        const reset = document.createElement("button");
-        reset.type = "button";
-        reset.classList.add("btn");
-        reset.classList.add("btn-light");
-        reset.classList.add("reset-btn");
+        const reset = document.createElement("p");
+        reset.textContent = "🗑️";
+        reset.classList.add("delete");
 
-        reset.textContent = "Reset";
+        reset.addEventListener("click", () => {
+          yeetMode = !yeetMode;
+
+          if (yeetMode) {
+            reset.classList.add("jiggle");
+          } else {
+            reset.classList.remove("jiggle");
+          }
+
+          updateAllTileExtras(picker);
+        });
 
         presets.appendChild(reset);
 
         picker.appendChild(presets);
+      } else {
+        const tiles = picker.querySelectorAll(".preset-tile");
+
+        for (const [idx, tile] of tiles.entries()) {
+          const rgb = apiData.paletteColors[idx];
+
+          updateTileStyle(rgb, tile);
+        }
+
+        updateAllTileExtras(picker);
       }
-    }, 100);
+    }, 50);
   });
+};
+
+/**
+ * Updated plus signs & selected styles & yeet mode
+ * @param {*} picker
+ */
+const updateAllTileExtras = (picker) => {
+  const tiles = picker.querySelectorAll(".preset-tile");
+
+  const firstBlank = apiData.paletteColors.findIndex(
+    (c) => c.r === 0 && c.g === 0 && c.b === 0
+  );
+
+  for (const [idx, tile] of tiles.entries()) {
+    // Yeet current state
+    tile.textContent = "";
+    tile.textContent = "";
+
+    tile.classList.remove("tile-selected");
+    tile.classList.remove("jiggle");
+
+    const color = apiData.paletteColors[idx];
+
+    const isNotEmpty = color.r !== 0 && color.g !== 0 && color.b !== 0;
+
+    if (yeetMode) {
+      if (isNotEmpty) {
+        tile.classList.add("jiggle");
+      }
+    }
+
+    if (idx === firstBlank) {
+      // Next logical choice gets a +
+      const extra = document.createElement("div");
+      extra.classList.add("tile-plus");
+
+      const v = document.createElement("div");
+      v.classList.add("vertical-bar");
+      extra.appendChild(v);
+
+      const h = document.createElement("div");
+      h.classList.add("horizontal-bar");
+      extra.appendChild(h);
+
+      tile.appendChild(extra);
+    } else if (idx > firstBlank) {
+      // Others after logical choice get a hover
+      const extra = document.createElement("div");
+      extra.classList.add("tile-plus-hover");
+
+      const v = document.createElement("div");
+      v.classList.add("vertical-bar");
+      extra.appendChild(v);
+
+      const h = document.createElement("div");
+      h.classList.add("horizontal-bar");
+      extra.appendChild(h);
+
+      tile.appendChild(extra);
+    }
+
+    // Selected gets extra flair
+    if (idx === pickerIndex && isNotEmpty) {
+      tile.classList.add("tile-selected");
+    }
+  }
 };
 
 const updateData = (portData) => {
@@ -357,7 +498,7 @@ document.querySelector("#save").addEventListener("click", async () => {
 
   Promise.all(results)
     .catch((e) => {
-      console.log(e);
+      console.error(e);
     })
     .then((r) => {
       fetch("/commit")

@@ -19,3 +19,13 @@ void savePortData(EEPROMPortData *portData)
 {
     ourEEPROM->put(0, *portData);
 }
+
+void fillPaletteData(EEPROMPalette *paletteData)
+{
+    ourEEPROM->get(sizeof(EEPROMPortData), paletteData);
+}
+
+void savePaletteData(EEPROMPalette *paletteData)
+{
+    ourEEPROM->put(sizeof(EEPROMPortData), *paletteData);
+}

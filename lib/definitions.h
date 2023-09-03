@@ -1,7 +1,9 @@
 #ifndef definitions_h
 #define definitions_h
 
-const uint32 storageVersion = 2;
+const uint32 storageVersion = 3;
+
+const uint8_t paletteColorCount = 21;
 
 enum Effect
 {
