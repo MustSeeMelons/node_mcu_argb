@@ -1,9 +1,9 @@
 # TODO, somewhat prioritized
 
-- Presets?
-- Show "+" on first empty
-- Others have "+" on hover
-- Selected index necessary, so we can click remove. Yeet reset button.
+- Neater looking port config. Smoller color squares, no text. There might be moar options in the future.
+- Proper error habndling in API, so ESP does not choke it self
+
+- Moar effects!
 
 - On startup act as a Access Point, so a user can connect & configure WiFi credentials
 - After some time - connect to WiFi and serve a page

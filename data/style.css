@@ -269,10 +269,27 @@ h5 {
     }
 }
 
+@keyframes tile-jiggle {
+    0% {
+        transform: rotate(-3deg);
+        
+    }
+    50% {
+        transform: rotate(3deg);
+    }
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+.tile-jiggle {
+    animation: tile-jiggle 0.3s ease-in-out infinite;
+    transition: scale 0.3s;
+}
+
 .jiggle {
     animation: jiggle 0.3s ease-in-out infinite;
     transition: scale 0.3s;
-   
 }
 
 .picker_sample {
@@ -307,4 +324,42 @@ h5 {
 .picker_wrapper {
     border-bottom-left-radius: 5px;
     padding-right: 0px;
+}
+
+.styled-alert {
+    position: fixed;
+    bottom: 0px;
+    left: 20px;
+    z-index: 100;
+}
+
+.port-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.port-header .form-switch {
+    margin-top: 5px;
+}
+
+.port-header h5 {
+    margin-top: 5px;
+    margin-bottom: 0px;
+}
+
+.port-details {
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.enabled-port {
+    max-height: 1000px; /* Need specific value for it to be animatable */
+    margin-top: 5px;
+    transition: all 0.2s;
+}
+
+.disabled-port {
+    max-height: 0px;
+    margin-top: 0px;
+    transition: all 0.2s;
 }

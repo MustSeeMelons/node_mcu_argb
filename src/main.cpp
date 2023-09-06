@@ -224,7 +224,7 @@ void handleBrightness()
 
   if (!hasBody)
   {
-    server.send(200, "text/plain", "no body mate!");
+    server.send(200, "text/plain", "NOK - No params!");
     return;
   }
 
@@ -235,7 +235,7 @@ void handleBrightness()
 
   FastLED.setBrightness(brightness);
 
-  server.send(200, "text/plain", "Ok");
+  server.send(200, "text/plain", "OK!");
 }
 
 void handleSave()
@@ -244,7 +244,7 @@ void handleSave()
 
   if (!hasBody)
   {
-    server.send(200, "text/plain", "no body mate!");
+    server.send(200, "text/plain", "NOK - No Params!");
     return;
   }
 
@@ -311,7 +311,7 @@ void handleSave()
 
   savePortData(&portData);
 
-  server.send(200, "text/plain", "Yay!");
+  server.send(200, "text/plain", "OK!");
 }
 
 bool handleFileRead(String path)
@@ -345,7 +345,7 @@ void handleNotFound()
 void handleCommit()
 {
   ourEEPROM->commit();
-  server.send(200, "text/plain", "Commited!");
+  server.send(200, "text/plain", "OK!");
 }
 
 void handlePalette()
@@ -354,7 +354,7 @@ void handlePalette()
 
   if (!hasBody)
   {
-    server.send(200, "text/plain", "no body mate!");
+    server.send(200, "text/plain", "NOK - No params!");
     return;
   }
 
@@ -363,13 +363,31 @@ void handlePalette()
 
   uint8_t index = int(request["index"]);
 
-  palette.colors[index].r = int(request["color"]["r"]);
-  palette.colors[index].g = int(request["color"]["g"]);
-  palette.colors[index].b = int(request["color"]["b"]);
+  if (index >= paletteColorCount)
+  {
+    server.send(200, "text/plain", "NOK - Invalid index!");
+    return;
+  }
+
+  uint8_t r = int(request["color"]["r"]);
+  uint8_t g = int(request["color"]["g"]);
+  uint8_t b = int(request["color"]["b"]);
+
+  if (r > 255 || g > 255 || b > 255)
+  {
+    server.send(200, "text/plain", "NOK - Color out of range!");
+    return;
+  }
+
+  palette.colors[index].r = r;
+  palette.colors[index].g = g;
+  palette.colors[index].b = b;
 
   savePaletteData(&palette);
 
   EEPROM.commit();
+
+  server.send(200, "text/plain", "OK!");
 }
 
 void assignPort(PortConfiguration *target, PortConfiguration *source)

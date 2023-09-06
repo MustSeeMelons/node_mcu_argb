@@ -45,6 +45,23 @@ const Effect = {
   HorizontalWing: 5,
 };
 
+const updatePaletteApi = (index, rgbArr) => {
+  fetch("/palette", {
+    method: "POST",
+    body: JSON.stringify({
+      index,
+      color: {
+        r: rgbArr[0],
+        g: rgbArr[1],
+        b: rgbArr[2],
+      },
+    }),
+  }).catch((e) => {
+    addMessage(e);
+    console.error(e);
+  });
+};
+
 const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
   const pickerContainer = document.createElement("button");
   pickerContainer.type = "button";
@@ -104,7 +121,13 @@ const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
           pickerIndex = i;
 
           if (yeetMode) {
+            // Update response stash
             apiData.paletteColors[i] = { r: 0, g: 0, b: 0 };
+
+            // Send to ESP
+            updatePaletteApi(i, [0, 0, 0]);
+
+            // Update our fancy styles
             updateTileStyle({ r: 0, g: 0, b: 0 }, tile);
             updateAllTileExtras(
               pickerContainer.querySelector(".picker_wrapper")
@@ -131,6 +154,7 @@ const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
               pickerContainer.querySelector(".picker_wrapper")
             );
 
+            updatePaletteApi(i, rgb);
             return;
           }
 
@@ -177,9 +201,9 @@ const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
           yeetMode = !yeetMode;
 
           if (yeetMode) {
-            reset.classList.add("jiggle");
+            reset.classList.add("tile-jiggle");
           } else {
-            reset.classList.remove("jiggle");
+            reset.classList.remove("tile-jiggle");
           }
 
           updateAllTileExtras(picker);
@@ -358,6 +382,8 @@ const renderConfig = (portDesignator, portData) => {
     const targetPort = apiData.ports.find((port) => port.id === portData.id);
 
     targetPort.isEnabled = e.target.checked;
+
+    updatePortEnabledStatus();
   });
 
   // Create config container
@@ -432,6 +458,31 @@ const renderConfig = (portDesignator, portData) => {
   container.appendChild(node);
 };
 
+const addMessage = (msgText) => {
+  const msg = document.createElement("div");
+  msg.classList.add("alert");
+  msg.classList.add("alert-danger");
+  msg.classList.add("styled-alert");
+  msg.role = "alert";
+  msg.textContent = msgText;
+
+  document.querySelector("body").appendChild(msg);
+
+  const clickHandler = (e) => {
+    const msg = document.querySelector(".alert");
+
+    msg.classList.add("disappearClass");
+
+    setTimeout(() => {
+      msg.remove();
+
+      document.removeEventListener("click", clickHandler);
+    }, 1000);
+  };
+
+  document.addEventListener("click", clickHandler);
+};
+
 document.querySelector("#save").addEventListener("click", async () => {
   // TODO validate data before we send it
 
@@ -445,6 +496,9 @@ document.querySelector("#save").addEventListener("click", async () => {
       body: JSON.stringify({
         value: apiData.brightness,
       }),
+    }).catch((e) => {
+      addMessage(e);
+      console.error(e);
     })
   );
 
@@ -498,6 +552,7 @@ document.querySelector("#save").addEventListener("click", async () => {
 
   Promise.all(results)
     .catch((e) => {
+      addMessage(e);
       console.error(e);
     })
     .then((r) => {
@@ -507,6 +562,7 @@ document.querySelector("#save").addEventListener("click", async () => {
           toggleLock();
         })
         .catch((e) => {
+          addMessage(e);
           console.error(e);
         });
     });
@@ -517,6 +573,19 @@ const brightnessInput = document.querySelector(`#brightness`);
 brightnessInput.addEventListener("change", (e) => {
   apiData.brightness = e.target.value;
 });
+
+const updatePortEnabledStatus = () => {
+  for (const [idx, port] of apiData.ports.entries()) {
+    const details = document.querySelector(`#details-${idx + 1}`);
+    if (port.isEnabled) {
+      details.classList.add("enabled-port");
+      details.classList.remove("disabled-port");
+    } else {
+      details.classList.remove("enabled-port");
+      details.classList.add("disabled-port");
+    }
+  }
+};
 
 fetch("/load").then(async (response) => {
   const data = await response.json();
@@ -530,6 +599,8 @@ fetch("/load").then(async (response) => {
   }
 
   apiData = data;
+
+  updatePortEnabledStatus();
 
   toggleLock();
 });
