@@ -4,8 +4,53 @@
 let apiData;
 
 let isLocked = true;
+let isWifiOpen = false;
 let pickerIndex = undefined;
 let yeetMode = false; // For resetting swatch colors
+
+// Get wifi field references
+const ssidInput = document.querySelector("#ssid");
+const passwordInput = document.querySelector("#password");
+const deviceIdInput = document.querySelector("#device-id");
+
+const clamp = (num, min, max) => {
+  return Math.max(min, Math.min(num, max));
+};
+
+ssidInput.addEventListener("blur", (e) => {
+  const l = clamp(e.target.value.length, 1, 64);
+
+  const v = e.target.value;
+
+  ssidInput.value = v.substring(0, l);
+});
+
+passwordInput.addEventListener("blur", (e) => {
+  const l = clamp(e.target.value.length, 1, 64);
+
+  const v = e.target.value;
+
+  passwordInput.value = v.substring(0, l);
+});
+
+deviceIdInput.addEventListener("blur", (e) => {
+  deviceIdInput.value = clamp(e.target.value, 1, 255);
+});
+
+const toggleWifiSettings = () => {
+  const wifi = document.querySelector("#wifi-config-container");
+
+  if (isWifiOpen) {
+    wifi.classList.remove("appearClass");
+    wifi.classList.add("disappearClass");
+    isWifiOpen = false;
+  } else {
+    wifi.classList.remove("disappearClass");
+    wifi.classList.remove("display-none"); // Will happen only once
+    wifi.classList.add("appearClass");
+    isWifiOpen = true;
+  }
+};
 
 const rgbToHex = (r, g, b) =>
   "#" +
@@ -46,7 +91,7 @@ const Effect = {
 };
 
 const updatePaletteApi = (index, rgbArr) => {
-  fetch("/palette", {
+  return fetch("/palette", {
     method: "POST",
     body: JSON.stringify({
       index,
@@ -57,7 +102,23 @@ const updatePaletteApi = (index, rgbArr) => {
       },
     }),
   }).catch((e) => {
-    addMessage(e);
+    addMessage(e, MessageType.ERROR);
+    console.error(e);
+  });
+};
+
+const updateWifiApi = (ssid, password, deviceId) => {
+  return fetch("/wifi", {
+    method: "POST",
+    body: JSON.stringify({
+      ssid: ssid,
+      ssidLength: ssid.length,
+      password: password,
+      passwordLength: password.length,
+      deviceId: deviceId,
+    }),
+  }).catch((e) => {
+    addMessage(e, MessageType.ERROR);
     console.error(e);
   });
 };
@@ -458,11 +519,27 @@ const renderConfig = (portDesignator, portData) => {
   container.appendChild(node);
 };
 
-const addMessage = (msgText) => {
+const MessageType = {
+  ERROR: "error",
+  INFO: "info",
+};
+
+const addMessage = (msgText, type) => {
   const msg = document.createElement("div");
   msg.classList.add("alert");
-  msg.classList.add("alert-danger");
+
+  msg.role = "alert";
   msg.classList.add("styled-alert");
+
+  switch (type) {
+    case MessageType.ERROR:
+      msg.classList.add("alert-danger");
+      break;
+    case MessageType.INFO:
+      msg.classList.add("alert-primary");
+      break;
+  }
+
   msg.role = "alert";
   msg.textContent = msgText;
 
@@ -497,7 +574,7 @@ document.querySelector("#save").addEventListener("click", async () => {
         value: apiData.brightness,
       }),
     }).catch((e) => {
-      addMessage(e);
+      addMessage(e, MessageType.ERROR);
       console.error(e);
     })
   );
@@ -552,7 +629,7 @@ document.querySelector("#save").addEventListener("click", async () => {
 
   Promise.all(results)
     .catch((e) => {
-      addMessage(e);
+      addMessage(e, MessageType.ERROR);
       console.error(e);
     })
     .then((r) => {
@@ -562,7 +639,7 @@ document.querySelector("#save").addEventListener("click", async () => {
           toggleLock();
         })
         .catch((e) => {
-          addMessage(e);
+          addMessage(e, MessageType.ERROR);
           console.error(e);
         });
     });
@@ -573,6 +650,41 @@ const brightnessInput = document.querySelector(`#brightness`);
 brightnessInput.addEventListener("change", (e) => {
   apiData.brightness = e.target.value;
 });
+
+const gearInput = document.querySelector("#wifi-toggle");
+gearInput.addEventListener("click", toggleWifiSettings);
+
+const wifiSaveInput = document.querySelector("#wifi-save");
+wifiSaveInput.addEventListener("click", async (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (!ssidInput.value || deviceIdInput.value === undefined) {
+    addMessage("DeviceId & SSID required!", MessageType.INFO);
+    return;
+  }
+
+  apiData.wifi.ssid = ssidInput.value;
+  apiData.wifi.password = passwordInput.value;
+  apiData.wifi.deviceId = deviceIdInput.value;
+
+  await updateWifiApi(
+    apiData.wifi.ssid,
+    apiData.wifi.password,
+    apiData.wifi.deviceId
+  );
+
+  toggleLock();
+
+  addMessage("Restarting Device", MessageType.INFO);
+
+  setTimeout(() => {
+    window.location.href = `http://argb-${apiData.wifi.deviceId}.local`;
+  }, 4000);
+});
+
+const wifiCancelInput = document.querySelector("#wifi-cancel");
+wifiCancelInput.addEventListener("click", toggleWifiSettings);
 
 const updatePortEnabledStatus = () => {
   for (const [idx, port] of apiData.ports.entries()) {
@@ -593,6 +705,10 @@ fetch("/load").then(async (response) => {
   brightnessInput.value = data.brightness ?? 0;
 
   console.info("raw", data);
+
+  ssidInput.value = data.wifi.ssid;
+  passwordInput.value = data.wifi.password;
+  deviceIdInput.value = data.wifi.deviceId;
 
   for (const port of data.ports) {
     renderConfig(port.id, port);

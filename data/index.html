@@ -17,10 +17,37 @@
     <div id="lock">
         <div id="spinner"></div>
     </div>
+    <div id="wifi-config-container" class="display-none">
+        <div id="wifi-config">
+            <h5>WiFi/Device Settings</h5>
+            <div class="input-group pb-2">
+                <span class="input-group-text">ID</span>
+                <input id="device-id" type="number" min="1" max="256" step="1" class="form-control"
+                    placeholder="Device ID" aria-label="device-id" aria-describedby="device-id-label">
+            </div>
+            <div class="input-group pb-2">
+                <span class="input-group-text">SSID</span>
+                <input id="ssid" type="text" class="form-control" placeholder="SSID" aria-label="ssid"
+                    aria-describedby="ssid-label">
+            </div>
+            <div class="input-group pb-2">
+                <span class="input-group-text">Password</span>
+                <input id="password" type="password" class="form-control" placeholder="Password" aria-label="password"
+                    aria-describedby="password-label">
+            </div>
+            <div class="d-flex flex-row-reverse ps-0 pe-0">
+                <button type="button" id="wifi-save" type="button" class="btn btn-primary ms-2">Update</button>
+                <button type="button" id="wifi-cancel" type="button" class="btn btn-danger">Cancel</button>
+            </div>
+        </div>
+    </div>
     <div id="root" class="container-fluid">
         <nav id="navbar" class="container-fluid p-0 pb-3 pt-3">
             <div id="nav-content">
-                <h5>ESP ARGB Utility</h5>
+                <div class="d-flex justify-content-between pe-2">
+                    <h5>ESP ARGB Utility</h5>
+                    <button type="button" id="wifi-toggle" type="button" class="btn btn-dark">⚙️</button>
+                </div>
                 <div id="navbar-details">
                     <div id="b-container">
                         <label for="brightness" class="form-label">Brightness</label>

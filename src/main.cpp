@@ -10,6 +10,7 @@
 #include "ArduinoJson.h"
 #include "../lib/storage.h"
 #include <EEPROM.h>
+#include "elapsedMillis.h"
 
 #define EEPROM_SIZE 1024
 
@@ -24,6 +25,9 @@
 #define BRIGHTNESS 255
 #define LED_TYPE WS2812B
 #define COLOR_ORDER GRB
+
+bool isRestart = false;
+elapsedMillis restartTimer;
 
 // Make sure we use the same instance everywhere
 EEPROMClass *ourEEPROM = &EEPROM;
@@ -63,6 +67,8 @@ struct PortConfiguration PortD6 = {
     CRGB::Red};
 
 EEPROMPalette palette = {CRGB(0, 0, 0)};
+
+EEPROMWifiData wifiData;
 
 PortConfiguration *currentPort;
 
@@ -191,7 +197,7 @@ void handleSinglePortLoad(PortConfiguration *port, JsonArray *ports)
 
 void handleLoad()
 {
-  StaticJsonDocument<2048> response;
+  StaticJsonDocument<4096> response;
 
   response["brightness"] = FastLED.getBrightness();
 
@@ -211,6 +217,12 @@ void handleLoad()
   handleSinglePortLoad(&PortD2, &ports);
   handleSinglePortLoad(&PortD5, &ports);
   handleSinglePortLoad(&PortD6, &ports);
+
+  JsonObject wifi = response.createNestedObject("wifi");
+
+  wifi["deviceId"] = wifiData.deviceId;
+  wifi["ssid"] = wifiData.ssid.data;
+  wifi["password"] = wifiData.password.data;
 
   String output;
   serializeJson(response, output);
@@ -236,6 +248,46 @@ void handleBrightness()
   FastLED.setBrightness(brightness);
 
   server.send(200, "text/plain", "OK!");
+}
+
+void handleWifi()
+{
+  bool hasBody = server.hasArg("plain");
+
+  if (!hasBody)
+  {
+    server.send(200, "text/plain", "NOK - No params!");
+    return;
+  }
+
+  StaticJsonDocument<256> request;
+  deserializeJson(request, server.arg("plain"));
+
+  uint8_t deviceId = int(request["deviceId"]);
+
+  String ssid = String(request["ssid"]);
+  uint8_t ssidLength = int(request["ssidLength"]);
+
+  String password = String(request["password"]);
+  uint8_t passwordLength = int(request["passwordLength"]);
+
+  wifiData.deviceId = deviceId;
+
+  wifiData.ssid.data = ssid;
+  wifiData.ssid.length = ssidLength;
+
+  wifiData.password.data = password;
+  wifiData.password.length = passwordLength;
+
+  // Edge case when on a fresh startup we save only wifi settings
+  // Version is part of the port struct, lazy fix, but oh well
+  saveVersion();
+  saveWifiData(&wifiData);
+
+  server.send(200, "text/plain", "OK!");
+
+  isRestart = true;
+  restartTimer = 0;
 }
 
 void handleSave()
@@ -437,10 +489,21 @@ void setup()
     FastLED.setBrightness(portData.brightness);
 
     fillPaletteData(&palette);
+
+    fillWifiData(&wifiData);
   }
   else
   {
     FastLED.setBrightness(BRIGHTNESS);
+
+    // Set blank wifi & pass
+    wifiData.password.data = "";
+    wifiData.password.length = 0;
+    wifiData.ssid.data = "";
+    wifiData.ssid.length = 0;
+    wifiData.deviceId = 1;
+
+    saveWifiData(&wifiData);
   }
 
   // Initialize fastled for each port
@@ -469,7 +532,9 @@ void setup()
     delay(500);
   }
 
-  MDNS.begin("argb");
+  String mdns = String("argb-") + String(wifiData.deviceId);
+
+  MDNS.begin(mdns);
 
   if (!SPIFFS.begin())
   {
@@ -482,6 +547,7 @@ void setup()
   server.on("/commit", handleCommit);
   server.on("/brightness", handleBrightness);
   server.on("/palette", handlePalette);
+  server.on("/wifi", handleWifi);
   server.onNotFound(handleNotFound);
 
   server.begin();
@@ -523,4 +589,9 @@ void loop()
 
   server.handleClient();
   MDNS.update();
+
+  if (isRestart && restartTimer > 1000)
+  {
+    ESP.restart();
+  }
 }

@@ -4,19 +4,21 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #include "port-configuration.h"
+#include "definitions.h"
 
 // Variable length record
-struct EEPROMRecord
+struct EEPROMStringRecord
 {
+    uint8_t length;
     String data;
-    int nextOffset;
 };
 
 // Wifi stuffs
 struct EEPROMWifiData
 {
-    EEPROMRecord ssid;
-    EEPROMRecord password;
+    uint8_t deviceId;
+    EEPROMStringRecord ssid;
+    EEPROMStringRecord password;
 };
 
 // ARGB port configs
@@ -42,5 +44,13 @@ void savePortData(EEPROMPortData *portData);
 void fillPaletteData(EEPROMPalette *paletteData);
 
 void savePaletteData(EEPROMPalette *paletteData);
+
+void saveEEPROMStringRecord(int32 *offset, EEPROMStringRecord *record);
+
+void saveWifiData(EEPROMWifiData *wifiData);
+
+void fillWifiData(EEPROMWifiData *wifiData);
+
+void saveVersion();
 
 #endif
