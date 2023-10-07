@@ -29,6 +29,15 @@
 bool isRestart = false;
 elapsedMillis restartTimer;
 
+// Access point credentials
+const char *appSsid = "argb";
+const char *appPassword = "";
+
+// AC defaults
+IPAddress ip(192, 168, 1, 1);
+IPAddress gateway(192, 168, 1, 1);
+IPAddress subnet(255, 255, 255, 0);
+
 // Make sure we use the same instance everywhere
 EEPROMClass *ourEEPROM = &EEPROM;
 
@@ -120,8 +129,8 @@ void updateEffects()
 }
 
 //// WiFi Stuff
-const char *ssid = "Pukeko";
-const char *password = "SeptiniKabaci1";
+char *ssid = "Pukeko";
+char *password = "SeptiniKabaci1";
 
 ESP8266WebServer server(80);
 
@@ -472,6 +481,16 @@ void assignPort(PortConfiguration *target, PortConfiguration *source)
   }
 }
 
+void launchAPMode()
+{
+  // No SSID means we start in AP mode
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(ip, gateway, subnet);
+  WiFi.softAP(appSsid, appPassword, 5);
+
+  delay(2000);
+}
+
 void setup()
 {
   ourEEPROM->begin(EEPROM_SIZE);
@@ -523,18 +542,36 @@ void setup()
   updateEffects();
 
   // Wifi stuffs
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED)
+  if (wifiData.ssid.length == 0)
   {
-    delay(500);
+    launchAPMode();
   }
+  else
+  {
+    // Use saved credentials otherwise
+    wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
+    wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
 
-  String mdns = String("argb-") + String(wifiData.deviceId);
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
 
-  MDNS.begin(mdns);
+    // Wait for connection
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      delay(500);
+
+      // In case we have invalid credentials - launch in AP mode after a while
+      if (restartTimer > 20000)
+      {
+        launchAPMode();
+        break;
+      }
+    }
+
+    String mdns = String("argb-") + String(wifiData.deviceId);
+
+    MDNS.begin(mdns);
+  }
 
   if (!SPIFFS.begin())
   {
