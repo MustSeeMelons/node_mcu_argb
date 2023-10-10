@@ -99,6 +99,8 @@ body {
 
 .picker-button {
     margin-right: 5px;
+    width: 30px;
+    height: 30px;
 }
 
 .picker_done > button {

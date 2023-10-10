@@ -5,5 +5,6 @@
 
 const uint8 coloredEffectCount = 4;
 const uint8_t dualEffectCount = 1;
+const uint8_t expandedEffectCount = 2;
 
 #endif

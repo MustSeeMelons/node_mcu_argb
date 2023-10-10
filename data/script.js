@@ -65,7 +65,7 @@ const extractRgb = (rgbString) => rgbString.match(/\d+/g).map(Number);
 
 const pause = () => {
   return new Promise((resolve) => {
-    setTimeout(() => resolve(), 100);
+    setTimeout(() => resolve(), 250);
   });
 };
 
@@ -88,6 +88,8 @@ const Effect = {
   FunkyBeat: 3,
   VerticalWing: 4,
   HorizontalWing: 5,
+  PaletteSlide: 6,
+  PaletteBounce: 7,
 };
 
 const updatePaletteApi = (index, rgbArr) => {
@@ -123,14 +125,19 @@ const updateWifiApi = (ssid, password, deviceId) => {
   });
 };
 
-const renderColorPicker = (parent, portDesignator, currentColor, onChange) => {
+const renderColorPicker = (
+  parent,
+  portDesignator,
+  currentColor,
+  onChange,
+  idx
+) => {
   const pickerContainer = document.createElement("button");
   pickerContainer.type = "button";
-  pickerContainer.id = `${portDesignator}-picker`;
+  pickerContainer.id = `${portDesignator}-${idx}-picker`;
   pickerContainer.classList.add("btn");
   pickerContainer.classList.add("btn-light");
   pickerContainer.classList.add("picker-button");
-  pickerContainer.textContent = "Color 1";
   parent.appendChild(pickerContainer);
 
   // Create picker
@@ -385,6 +392,30 @@ const updateData = (portData) => {
         ];
       }
       break;
+    case Effect.PaletteSlide:
+    case Effect.PaletteBounce: {
+      if (!portData.colors) {
+        portData.colors = [
+          {
+            r: 120,
+            g: 120,
+            b: 120,
+          },
+          {
+            r: 120,
+            g: 120,
+            b: 120,
+          },
+          {
+            r: 120,
+            g: 120,
+            b: 120,
+          },
+        ];
+      }
+
+      portData.speed = 100;
+    }
   }
 };
 
@@ -459,44 +490,113 @@ const renderConfig = (portDesignator, portData) => {
     case Effect.HorizontalWing: {
       // Create a niceish title for it
       const title = document.createElement("h6");
-      title.textContent = "Color";
+      title.textContent = "Settings";
       node.appendChild(title);
 
       const currentColor = portData.color;
 
-      renderColorPicker(node, portDesignator, currentColor, (color) => {
-        const targetPort = apiData.ports.find(
-          (port) => port.id === portData.id
-        );
+      renderColorPicker(
+        node,
+        portDesignator,
+        currentColor,
+        (color) => {
+          const targetPort = apiData.ports.find(
+            (port) => port.id === portData.id
+          );
 
-        targetPort.color = {
-          r: color.rgba[0],
-          g: color.rgba[1],
-          b: color.rgba[2],
-        };
-      });
+          targetPort.color = {
+            r: color.rgba[0],
+            g: color.rgba[1],
+            b: color.rgba[2],
+          };
+        },
+        0
+      );
 
       break;
     }
     case Effect.FunkyBeat: {
       const title = document.createElement("h6");
-      title.textContent = "Colors";
+      title.textContent = "Settings";
       node.appendChild(title);
 
       const colors = portData.colors;
 
       for (const [idx, color] of colors.entries()) {
-        renderColorPicker(node, portDesignator, color, (color) => {
-          const targetPort = apiData.ports.find(
-            (port) => port.id === portData.id
-          );
+        renderColorPicker(
+          node,
+          portDesignator,
+          color,
+          (color) => {
+            const targetPort = apiData.ports.find(
+              (port) => port.id === portData.id
+            );
 
-          targetPort.colors[idx] = {
-            r: color.rgba[0],
-            g: color.rgba[1],
-            b: color.rgba[2],
-          };
-        });
+            targetPort.colors[idx] = {
+              r: color.rgba[0],
+              g: color.rgba[1],
+              b: color.rgba[2],
+            };
+          },
+          idx
+        );
+      }
+
+      break;
+    }
+    case Effect.PaletteSlide:
+    case Effect.PaletteBounce: {
+      const title = document.createElement("h6");
+      title.textContent = "Settings";
+      node.appendChild(title);
+
+      // TODO make slider?
+      // TODO extract input group creation into a fucntion
+      const inputGroup = document.createElement("div");
+      inputGroup.classList.add("input-group");
+      inputGroup.classList.add("pb-2");
+
+      const span = document.createElement("span");
+      span.classList.add("input-group-text");
+      span.textContent = "Speed";
+      inputGroup.appendChild(span);
+
+      const inp = document.createElement("input");
+      inp.classList.add("form-control");
+      inp.id = `${portDesignator}-speed`;
+      inp.placeholder = "Speed";
+      inp.value = portData.speed;
+      inp.type = "number";
+      // TODO add clamps blur listeners
+      inp.min = -32000;
+      inp.max = 32000;
+      inputGroup.appendChild(inp);
+      inputGroup.addEventListener("change", (e) => {
+        portData.speed = e.target.value;
+      });
+
+      node.appendChild(inputGroup);
+
+      const colors = portData.colors;
+
+      for (const [idx, color] of colors.entries()) {
+        renderColorPicker(
+          node,
+          portDesignator,
+          color,
+          (color) => {
+            const targetPort = apiData.ports.find(
+              (port) => port.id === portData.id
+            );
+
+            targetPort.colors[idx] = {
+              r: color.rgba[0],
+              g: color.rgba[1],
+              b: color.rgba[2],
+            };
+          },
+          idx
+        );
       }
 
       break;
@@ -561,8 +661,6 @@ const addMessage = (msgText, type) => {
 };
 
 document.querySelector("#save").addEventListener("click", async () => {
-  // TODO validate data before we send it
-
   toggleLock();
 
   const results = [];
@@ -598,6 +696,8 @@ document.querySelector("#save").addEventListener("click", async () => {
             },
           };
         case Effect.FunkyBeat:
+        case Effect.PaletteSlide:
+        case Effect.PaletteBounce:
           return {
             colors: port.colors.map((c) => {
               return {
@@ -619,6 +719,7 @@ document.querySelector("#save").addEventListener("click", async () => {
           effectId: +port.effectId,
           ledCount: port.ledCount,
           isEnabled: port.isEnabled,
+          speed: port.speed,
         }),
       })
     );
@@ -688,7 +789,7 @@ wifiCancelInput.addEventListener("click", toggleWifiSettings);
 
 const updatePortEnabledStatus = () => {
   for (const [idx, port] of apiData.ports.entries()) {
-    const details = document.querySelector(`#details-${idx + 1}`);
+    const details = document.querySelector(`#details-${idx}`);
     if (port.isEnabled) {
       details.classList.add("enabled-port");
       details.classList.remove("disabled-port");

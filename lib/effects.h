@@ -16,4 +16,11 @@ struct DualColorEffect
     void (*process)(uint8_t portId, CRGB leds[], CRGB color, CRGB otherColor, uint8_t num_leds);
 };
 
+struct ExpandedEffect
+{
+    uint8_t id;
+    void (*setup)(uint8_t portId, CRGB colors[5]);
+    void (*process)(uint8_t portId, CRGB leds[], int16_t speed, uint8_t num_leds);
+};
+
 #endif

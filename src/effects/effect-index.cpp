@@ -6,7 +6,11 @@ extern ColoredEffect starsEffect;
 extern ColoredEffect staticEffect;
 extern DualColorEffect funkyBeatEffect;
 extern ColoredEffect verticalWingEffect;
+extern ExpandedEffect paletteSlideEffect;
+extern ExpandedEffect paletteBounceEffect;
 
 ColoredEffect coloredEffects[coloredEffectCount] = {pingPongEffect, starsEffect, staticEffect, verticalWingEffect};
 
 DualColorEffect dualColorEffects[dualEffectCount] = {funkyBeatEffect};
+
+ExpandedEffect expandedEffects[expandedEffectCount] = {paletteSlideEffect, paletteBounceEffect};

@@ -12,7 +12,7 @@
 #include <EEPROM.h>
 #include "elapsedMillis.h"
 
-#define EEPROM_SIZE 1024
+#define EEPROM_SIZE 4096
 
 //// FastLed Things
 #define DI_PIN_ONE D1
@@ -20,7 +20,7 @@
 #define DI_PIN_FIVE D5
 #define DI_PIN_SIX D6
 
-#define LED_LENGHT_MAX 512
+#define LED_LENGHT_MAX 256
 
 #define BRIGHTNESS 255
 #define LED_TYPE WS2812B
@@ -57,9 +57,11 @@ struct PortConfiguration PortD1 = {
 struct PortConfiguration PortD2 = {
     PortDefinition::IdD2,
     90,
-    0,
+    6,
     true,
-    CRGB::Green};
+    {.expanded = {{CRGB::Red, CRGB::Green, CRGB::Blue}, 100}}
+
+};
 
 struct PortConfiguration PortD5 = {
     PortDefinition::IdD5,
@@ -88,9 +90,11 @@ void *d6Pointer;
 
 extern const uint8 coloredEffectCount;
 extern const uint8_t dualEffectCount;
+extern const uint8_t expandedEffectCount;
 
 extern ColoredEffect coloredEffects[];
 extern DualColorEffect dualColorEffects[];
+extern ExpandedEffect expandedEffects[];
 
 void updateColoredEffect(PortConfiguration *port, void **effectPointer)
 {
@@ -99,6 +103,7 @@ void updateColoredEffect(PortConfiguration *port, void **effectPointer)
     if (coloredEffects[i].id == port->effectId)
     {
       *effectPointer = &coloredEffects[i];
+      break;
     }
   }
 }
@@ -110,6 +115,20 @@ void updateDualColoredEffect(PortConfiguration *port, void **effectPointer)
     if (dualColorEffects[i].id == port->effectId)
     {
       *effectPointer = &dualColorEffects[i];
+      break;
+    }
+  }
+}
+
+void updateExtendedEffect(PortConfiguration *port, void **effectPointer)
+{
+  for (size_t i = 0; i < expandedEffectCount; i++)
+  {
+    if (expandedEffects[i].id == port->effectId)
+    {
+      *effectPointer = &expandedEffects[i];
+      ((ExpandedEffect *)*effectPointer)->setup(port->id, port->details.expanded.colors);
+      break;
     }
   }
 }
@@ -126,6 +145,11 @@ void updateEffects()
   updateDualColoredEffect(&PortD2, &d2Pointer);
   updateDualColoredEffect(&PortD5, &d5Pointer);
   updateDualColoredEffect(&PortD6, &d6Pointer);
+
+  updateExtendedEffect(&PortD1, &d1Pointer);
+  updateExtendedEffect(&PortD2, &d2Pointer);
+  updateExtendedEffect(&PortD5, &d5Pointer);
+  updateExtendedEffect(&PortD6, &d6Pointer);
 }
 
 //// WiFi Stuff
@@ -201,12 +225,35 @@ void handleSinglePortLoad(PortConfiguration *port, JsonArray *ports)
     c2["b"] = port->details.colors[1].b;
     break;
   }
+  case Effect::PaletteSlide:
+  case Effect::PaletteBounce:
+  {
+    JsonArray colors = obj.createNestedArray("colors");
+
+    JsonObject c1 = colors.createNestedObject();
+    c1["r"] = port->details.expanded.colors[0].r;
+    c1["g"] = port->details.expanded.colors[0].g;
+    c1["b"] = port->details.expanded.colors[0].b;
+
+    JsonObject c2 = colors.createNestedObject();
+    c2["r"] = port->details.expanded.colors[1].r;
+    c2["g"] = port->details.expanded.colors[1].g;
+    c2["b"] = port->details.expanded.colors[1].b;
+
+    JsonObject c3 = colors.createNestedObject();
+    c3["r"] = port->details.expanded.colors[2].r;
+    c3["g"] = port->details.expanded.colors[2].g;
+    c3["b"] = port->details.expanded.colors[2].b;
+
+    obj["speed"] = port->details.expanded.speed;
+    break;
+  }
   }
 }
 
 void handleLoad()
 {
-  StaticJsonDocument<4096> response;
+  StaticJsonDocument<6144> response;
 
   response["brightness"] = FastLED.getBrightness();
 
@@ -356,6 +403,17 @@ void handleSave()
       currentPort->details.colors[i].b = color["b"];
     }
     break;
+  case Effect::PaletteSlide:
+  case Effect::PaletteBounce:
+    for (size_t i = 0; i < 3; i++)
+    {
+      auto color = request["colors"][i];
+      currentPort->details.expanded.colors[i].r = color["r"];
+      currentPort->details.expanded.colors[i].g = color["g"];
+      currentPort->details.expanded.colors[i].b = color["b"];
+    }
+    currentPort->details.expanded.speed = int(request["speed"]);
+    break;
   }
 
   currentPort->ledCount = int(request["ledCount"]);
@@ -477,6 +535,21 @@ void assignPort(PortConfiguration *target, PortConfiguration *source)
     target->details.colors[1].r = source->details.colors[1].r;
     target->details.colors[1].g = source->details.colors[1].g;
     target->details.colors[1].b = source->details.colors[1].b;
+  case Effect::PaletteSlide:
+  case Effect::PaletteBounce:
+    target->details.expanded.colors[0].r = source->details.expanded.colors[0].r;
+    target->details.expanded.colors[0].g = source->details.expanded.colors[0].g;
+    target->details.expanded.colors[0].b = source->details.expanded.colors[0].b;
+
+    target->details.expanded.colors[1].r = source->details.expanded.colors[1].r;
+    target->details.expanded.colors[1].g = source->details.expanded.colors[1].g;
+    target->details.expanded.colors[1].b = source->details.expanded.colors[1].b;
+
+    target->details.expanded.colors[2].r = source->details.expanded.colors[2].r;
+    target->details.expanded.colors[2].g = source->details.expanded.colors[2].g;
+    target->details.expanded.colors[2].b = source->details.expanded.colors[2].b;
+
+    target->details.expanded.speed = source->details.expanded.speed;
     break;
   }
 }
@@ -542,36 +615,36 @@ void setup()
   updateEffects();
 
   // Wifi stuffs
-  if (wifiData.ssid.length == 0)
-  {
-    launchAPMode();
-  }
-  else
-  {
-    // Use saved credentials otherwise
-    wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
-    wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
+  // if (wifiData.ssid.length == 0)
+  // {
+  //   launchAPMode();
+  // }
+  // else
+  // {
+  // Use saved credentials otherwise
+  // wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
+  // wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
 
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
 
-    // Wait for connection
-    while (WiFi.status() != WL_CONNECTED)
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+
+    // In case we have invalid credentials - launch in AP mode after a while
+    if (restartTimer > 20000)
     {
-      delay(500);
-
-      // In case we have invalid credentials - launch in AP mode after a while
-      if (restartTimer > 20000)
-      {
-        launchAPMode();
-        break;
-      }
+      launchAPMode();
+      break;
     }
-
-    String mdns = String("argb-") + String(wifiData.deviceId);
-
-    MDNS.begin(mdns);
   }
+
+  String mdns = String("argb-") + String(wifiData.deviceId);
+
+  MDNS.begin(mdns);
+  // }
 
   if (!SPIFFS.begin())
   {
@@ -609,6 +682,10 @@ void processPort(PortConfiguration *port, void **effectPointer, CRGB leds[])
     break;
   case Effect::FunkyBeat:
     ((DualColorEffect *)*effectPointer)->process(port->id, leds, port->details.colors[0], port->details.colors[1], port->ledCount);
+    break;
+  case Effect::PaletteSlide:
+  case Effect::PaletteBounce:
+    ((ExpandedEffect *)*effectPointer)->process(port->id, leds, port->details.expanded.speed, port->ledCount);
     break;
   default:
     break;
