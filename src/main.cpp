@@ -153,8 +153,8 @@ void updateEffects()
 }
 
 //// WiFi Stuff
-char *ssid = "Pukeko";
-char *password = "SeptiniKabaci1";
+char ssid[64];     // = "Pukeko";
+char password[64]; // = "SeptiniKabaci1";
 
 ESP8266WebServer server(80);
 
@@ -627,24 +627,26 @@ void setup()
 
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
-  }
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(500);
 
-    // In case we have invalid credentials - launch in AP mode after a while
-    if (restartTimer > 20000)
+    restartTimer = 0;
+
+    // Wait for connection
+    while (WiFi.status() != WL_CONNECTED)
     {
-      launchAPMode();
-      break;
+      delay(500);
+
+      // In case we have invalid credentials - launch in AP mode after a while
+      if (restartTimer > 20000)
+      {
+        launchAPMode();
+        break;
+      }
     }
   }
 
   String mdns = String("argb-") + String(wifiData.deviceId);
 
   MDNS.begin(mdns);
-  // }
 
   if (!SPIFFS.begin())
   {
