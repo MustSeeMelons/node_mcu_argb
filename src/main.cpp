@@ -615,19 +615,19 @@ void setup()
   updateEffects();
 
   // Wifi stuffs
-  // if (wifiData.ssid.length == 0)
-  // {
-  //   launchAPMode();
-  // }
-  // else
-  // {
-  // Use saved credentials otherwise
-  // wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
-  // wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
+  if (wifiData.ssid.length == 0)
+  {
+    launchAPMode();
+  }
+  else
+  {
+    // Use saved credentials otherwise
+    wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
+    wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+  }
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED)
   {
