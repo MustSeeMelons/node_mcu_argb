@@ -127,8 +127,8 @@ void updateEffects()
 }
 
 //// WiFi Stuff
-char *ssid = "Pukeko";
-char *password = "SeptiniKabaci1";
+char ssid[64];
+char password[64];
 
 ESP8266WebServer server(80);
 
@@ -571,50 +571,34 @@ void setup()
   updateEffects();
 
   // Wifi stuffs
-  // if (wifiData.ssid.length == 0)
-  // {
-  //   launchAPMode();
-  // }
-  // else
-  // {
-  //   // Use saved credentials otherwise
-  //   wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
-  //   wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
-
-  //   WiFi.mode(WIFI_STA);
-  //   WiFi.begin(ssid, password);
-
-  //   restartTimer = 0;
-
-  //   // Wait for connection
-  //   while (WiFi.status() != WL_CONNECTED)
-  //   {
-  //     delay(500);
-
-  //     // In case we have invalid credentials - launch in AP mode after a while
-  //     if (restartTimer > 20000)
-  //     {
-  //       launchAPMode();
-  //       break;
-  //     }
-  //   }
-  // }
-
-  // XXX AP Workaround hack
-  while (WiFi.status() != WL_CONNECTED)
+  if (wifiData.ssid.length == 0)
   {
-    delay(500);
+    launchAPMode();
+  }
+  else
+  {
+    // Use saved credentials otherwise
+    wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
+    wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
 
-    // In case we have invalid credentials - launch in AP mode after a while
-    if (restartTimer > 20000)
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+
+    restartTimer = 0;
+
+    // Wait for connection
+    while (WiFi.status() != WL_CONNECTED)
     {
-      launchAPMode();
-      break;
+      delay(500);
+
+      // In case we have invalid credentials - launch in AP mode after a while
+      if (restartTimer > 20000)
+      {
+        launchAPMode();
+        break;
+      }
     }
   }
-
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
 
   String mdns = String("argb-") + String(wifiData.deviceId);
 

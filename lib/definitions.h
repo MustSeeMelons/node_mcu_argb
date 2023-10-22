@@ -1,7 +1,7 @@
 #ifndef definitions_h
 #define definitions_h
 
-const uint32 storageVersion = 9;
+const uint32 storageVersion = 10;
 
 const uint8_t paletteColorCount = 21;
 
