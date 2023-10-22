@@ -26,8 +26,6 @@ struct EEPROMPortData
 {
     PortConfiguration d1;
     PortConfiguration d2;
-    PortConfiguration d5;
-    PortConfiguration d6;
     uint8_t brightness;
     uint32 v;
 };

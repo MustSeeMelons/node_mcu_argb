@@ -1,7 +1,7 @@
 #include "../lib/effects.h"
 #include "elapsedMillis.h"
 
-static CRGBPalette16 *ourPalette[portCount] = {nullptr, nullptr, nullptr, nullptr};
+static CRGBPalette16 *ourPalette[portCount] = {nullptr, nullptr};
 
 void bounceSetup(uint8_t portId, CRGB colors[5])
 {

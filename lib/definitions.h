@@ -1,7 +1,7 @@
 #ifndef definitions_h
 #define definitions_h
 
-const uint32 storageVersion = 10;
+const uint32 storageVersion = 9;
 
 const uint8_t paletteColorCount = 21;
 
@@ -17,14 +17,12 @@ enum Effect
     PaletteBounce = 7
 };
 
-const uint8_t portCount = 4;
+const uint8_t portCount = 2;
 
 enum PortDefinition
 {
     IdD1 = 0,
-    IdD2 = 1,
-    IdD5 = 2,
-    IdD6 = 3
+    IdD2 = 1
 };
 
 #endif // definitions_h

@@ -3,8 +3,8 @@
 #include "elapsedMillis.h"
 
 static elapsedMillis stamp[portCount];
-static uint8_t pallette_index[portCount] = {0, 0, 0, 0};
-static CRGBPalette16 *ourPalette[portCount] = {nullptr, nullptr, nullptr, nullptr};
+static uint8_t pallette_index[portCount] = {0, 0};
+static CRGBPalette16 *ourPalette[portCount] = {nullptr, nullptr};
 
 void slideSetup(uint8_t portId, CRGB colors[5])
 {

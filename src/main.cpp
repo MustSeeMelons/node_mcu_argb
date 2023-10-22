@@ -17,8 +17,6 @@
 //// FastLed Things
 #define DI_PIN_ONE D1
 #define DI_PIN_TWO D2
-#define DI_PIN_FIVE D5
-#define DI_PIN_SIX D6
 
 #define LED_LENGHT_MAX 256
 
@@ -43,8 +41,6 @@ EEPROMClass *ourEEPROM = &EEPROM;
 
 CRGB leds_one[LED_LENGHT_MAX];
 CRGB leds_two[LED_LENGHT_MAX];
-CRGB leds_three[LED_LENGHT_MAX];
-CRGB leds_four[LED_LENGHT_MAX];
 
 // We were defiend elsewhere, but that was cauing issues
 struct PortConfiguration PortD1 = {
@@ -63,20 +59,6 @@ struct PortConfiguration PortD2 = {
 
 };
 
-struct PortConfiguration PortD5 = {
-    PortDefinition::IdD5,
-    12,
-    4,
-    true,
-    CRGB::Red};
-
-struct PortConfiguration PortD6 = {
-    PortDefinition::IdD6,
-    12,
-    4,
-    true,
-    CRGB::Red};
-
 EEPROMPalette palette = {CRGB(0, 0, 0)};
 
 EEPROMWifiData wifiData;
@@ -85,8 +67,6 @@ PortConfiguration *currentPort;
 
 void *d1Pointer;
 void *d2Pointer;
-void *d5Pointer;
-void *d6Pointer;
 
 extern const uint8 coloredEffectCount;
 extern const uint8_t dualEffectCount;
@@ -138,18 +118,12 @@ void updateEffects()
 {
   updateColoredEffect(&PortD1, &d1Pointer);
   updateColoredEffect(&PortD2, &d2Pointer);
-  updateColoredEffect(&PortD5, &d5Pointer);
-  updateColoredEffect(&PortD6, &d6Pointer);
 
   updateDualColoredEffect(&PortD1, &d1Pointer);
   updateDualColoredEffect(&PortD2, &d2Pointer);
-  updateDualColoredEffect(&PortD5, &d5Pointer);
-  updateDualColoredEffect(&PortD6, &d6Pointer);
 
   updateExtendedEffect(&PortD1, &d1Pointer);
   updateExtendedEffect(&PortD2, &d2Pointer);
-  updateExtendedEffect(&PortD5, &d5Pointer);
-  updateExtendedEffect(&PortD6, &d6Pointer);
 }
 
 //// WiFi Stuff
@@ -271,8 +245,6 @@ void handleLoad()
 
   handleSinglePortLoad(&PortD1, &ports);
   handleSinglePortLoad(&PortD2, &ports);
-  handleSinglePortLoad(&PortD5, &ports);
-  handleSinglePortLoad(&PortD6, &ports);
 
   JsonObject wifi = response.createNestedObject("wifi");
 
@@ -369,12 +341,6 @@ void handleSave()
   case PortDefinition::IdD2:
     currentPort = &PortD2;
     break;
-  case PortDefinition::IdD5:
-    currentPort = &PortD5;
-    break;
-  case PortDefinition::IdD6:
-    currentPort = &PortD6;
-    break;
   default:
     server.send(500, "text/plain", "Port not found!");
     return;
@@ -424,8 +390,6 @@ void handleSave()
   portData.v = storageVersion;
   portData.d1 = PortD1;
   portData.d2 = PortD2;
-  portData.d5 = PortD5;
-  portData.d6 = PortD6;
   portData.brightness = FastLED.getBrightness();
 
   savePortData(&portData);
@@ -575,8 +539,6 @@ void setup()
   {
     assignPort(&PortD1, &portData.d1);
     assignPort(&PortD2, &portData.d2);
-    assignPort(&PortD5, &portData.d5);
-    assignPort(&PortD6, &portData.d6);
 
     FastLED.setBrightness(portData.brightness);
 
@@ -605,30 +567,40 @@ void setup()
   FastLED.addLeds<LED_TYPE, DI_PIN_TWO, COLOR_ORDER>(leds_two, PortD2.ledCount)
       .setCorrection(TypicalLEDStrip);
 
-  FastLED.addLeds<LED_TYPE, DI_PIN_FIVE, COLOR_ORDER>(leds_three, PortD5.ledCount)
-      .setCorrection(TypicalLEDStrip);
-
-  FastLED.addLeds<LED_TYPE, DI_PIN_SIX, COLOR_ORDER>(leds_four, PortD6.ledCount)
-      .setCorrection(TypicalLEDStrip);
-
   // Fetch effect references to loop through
   updateEffects();
 
   // Wifi stuffs
-  if (wifiData.ssid.length == 0)
-  {
-    launchAPMode();
-  }
-  else
-  {
-    // Use saved credentials otherwise
-    wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
-    wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
+  // if (wifiData.ssid.length == 0)
+  // {
+  //   launchAPMode();
+  // }
+  // else
+  // {
+  //   // Use saved credentials otherwise
+  //   wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
+  //   wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
 
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
-  }
-  // Wait for connection
+  //   WiFi.mode(WIFI_STA);
+  //   WiFi.begin(ssid, password);
+
+  //   restartTimer = 0;
+
+  //   // Wait for connection
+  //   while (WiFi.status() != WL_CONNECTED)
+  //   {
+  //     delay(500);
+
+  //     // In case we have invalid credentials - launch in AP mode after a while
+  //     if (restartTimer > 20000)
+  //     {
+  //       launchAPMode();
+  //       break;
+  //     }
+  //   }
+  // }
+
+  // XXX AP Workaround hack
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
@@ -641,10 +613,12 @@ void setup()
     }
   }
 
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
   String mdns = String("argb-") + String(wifiData.deviceId);
 
   MDNS.begin(mdns);
-  // }
 
   if (!SPIFFS.begin())
   {
@@ -696,8 +670,6 @@ void loop()
 {
   processPort(&PortD1, &d1Pointer, leds_one);
   processPort(&PortD2, &d2Pointer, leds_two);
-  processPort(&PortD5, &d5Pointer, leds_three);
-  processPort(&PortD6, &d6Pointer, leds_four);
 
   FastLED.show();
 

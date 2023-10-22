@@ -9,8 +9,6 @@ void fillPortData(EEPROMPortData *portData)
 
     portData->d1 = data.d1;
     portData->d2 = data.d2;
-    portData->d5 = data.d5;
-    portData->d6 = data.d6;
     portData->brightness = data.brightness;
     portData->v = data.v;
 }
