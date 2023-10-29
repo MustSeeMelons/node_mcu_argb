@@ -360,20 +360,25 @@ void handleSave()
   deserializeJson(request, server.arg("plain"));
 
   uint8_t portId = int(request["id"]);
+  CRGB *ledArr;
 
   switch (portId)
   {
   case PortDefinition::IdD1:
     currentPort = &PortD1;
+    ledArr = leds_one;
     break;
   case PortDefinition::IdD2:
     currentPort = &PortD2;
+    ledArr = leds_two;
     break;
   case PortDefinition::IdD5:
     currentPort = &PortD5;
+    ledArr = leds_three;
     break;
   case PortDefinition::IdD6:
     currentPort = &PortD6;
+    ledArr = leds_four;
     break;
   default:
     server.send(500, "text/plain", "Port not found!");
@@ -415,6 +420,8 @@ void handleSave()
     currentPort->details.expanded.speed = int(request["speed"]);
     break;
   }
+
+  fill_solid(ledArr, currentPort->ledCount, CRGB::Black);
 
   currentPort->ledCount = int(request["ledCount"]);
 

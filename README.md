@@ -1,8 +1,10 @@
 # TODO, somewhat prioritized
 
-- Proper error habndling in API, so ESP does not choke it self (?) ArduinoJSON?
+- Update effects to use a more detailed config (all 3x colors, speed)
+
 - Moar effects! Christmas Lights?
-- Design pass?
+- Proper error habndling in API, so ESP does not choke it self (?) ArduinoJSON?
+- Update stand-alone by merging this
 
 # To update SPIFFS
 
@@ -13,5 +15,3 @@
 - Profit
 
 # Bugz
-
-None currently.

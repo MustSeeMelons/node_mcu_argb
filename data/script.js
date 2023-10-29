@@ -13,8 +13,18 @@ const ssidInput = document.querySelector("#ssid");
 const passwordInput = document.querySelector("#password");
 const deviceIdInput = document.querySelector("#device-id");
 
-const clamp = (num, min, max) => {
-  return Math.max(min, Math.min(num, max));
+/**
+ * Create all port HTML for a single port.
+ * @param {*} portId
+ */
+const createPort = (portId) => {
+  const root = document.querySelector("#port-configs");
+
+  const container = document.createElement("div");
+
+  container.innerHTML = getPortHTML(portId);
+
+  root.appendChild(container);
 };
 
 ssidInput.addEventListener("blur", (e) => {
@@ -50,35 +60,6 @@ const toggleWifiSettings = () => {
     wifi.classList.add("appearClass");
     isWifiOpen = true;
   }
-};
-
-const rgbToHex = (r, g, b) =>
-  "#" +
-  [r, g, b]
-    .map((x) => {
-      const hex = x.toString(16);
-      return hex.length === 1 ? "0" + hex : hex;
-    })
-    .join("");
-
-const extractRgb = (rgbString) => rgbString.match(/\d+/g).map(Number);
-
-const pause = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(), 250);
-  });
-};
-
-const debounce = (callback, time) => {
-  let id = null;
-
-  return (...args) => {
-    clearTimeout(id);
-
-    id = setTimeout(() => {
-      callback.apply(null, args);
-    }, time);
-  };
 };
 
 const Effect = {
@@ -377,7 +358,7 @@ const updateData = (portData) => {
       }
       break;
     case Effect.FunkyBeat:
-      if (!portData.colors) {
+      if (!portData.colors || portData.colors.length !== 2) {
         portData.colors = [
           {
             r: 120,
@@ -394,7 +375,7 @@ const updateData = (portData) => {
       break;
     case Effect.PaletteSlide:
     case Effect.PaletteBounce: {
-      if (!portData.colors) {
+      if (!portData.colors || portData.colors.length !== 3) {
         portData.colors = [
           {
             r: 120,
@@ -812,6 +793,7 @@ fetch("/load").then(async (response) => {
   deviceIdInput.value = data.wifi.deviceId;
 
   for (const port of data.ports) {
+    createPort(port.id);
     renderConfig(port.id, port);
   }
 
