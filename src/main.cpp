@@ -363,7 +363,7 @@ void handleSave()
   deserializeJson(request, server.arg("plain"));
 
   uint8_t portId = int(request["id"]);
-  CRGB *ledArr;
+  CRGB *ledArr = nullptr;
 
   switch (portId)
   {
@@ -425,9 +425,12 @@ void handleSave()
     break;
   }
 
-  fill_solid(ledArr, currentPort->ledCount, CRGB::Black);
-
   currentPort->ledCount = int(request["ledCount"]);
+
+  if (ledArr != nullptr)
+  {
+    fill_solid(ledArr, currentPort->ledCount, CRGB::Black);
+  }
 
   updateEffects();
 
