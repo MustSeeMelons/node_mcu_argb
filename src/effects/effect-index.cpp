@@ -8,6 +8,7 @@ extern DualColorEffect funkyBeatEffect;
 extern ColoredEffect verticalWingEffect;
 extern ExpandedEffect paletteSlideEffect;
 extern ExpandedEffect paletteBounceEffect;
+// extern ExpandedEffect christmasEffect;
 
 ColoredEffect coloredEffects[coloredEffectCount] = {pingPongEffect, starsEffect, staticEffect, verticalWingEffect};
 

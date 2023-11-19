@@ -5,6 +5,10 @@ const uint32 storageVersion = 11;
 
 const uint8_t paletteColorCount = 21;
 
+const uint16 ledCountMax = 256;
+
+const uint8_t configColorCount = 5;
+
 enum Effect
 {
     PingPong = 0,
@@ -14,7 +18,8 @@ enum Effect
     VerticalWing = 4,
     HorizontalWing = 5,
     PaletteSlide = 6,
-    PaletteBounce = 7
+    PaletteBounce = 7,
+    Christmas = 8
 };
 
 const uint8_t portCount = 4;

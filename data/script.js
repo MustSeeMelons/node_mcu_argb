@@ -71,6 +71,7 @@ const Effect = {
   HorizontalWing: 5,
   PaletteSlide: 6,
   PaletteBounce: 7,
+  Christmas: 8,
 };
 
 const updatePaletteApi = (index, rgbArr) => {
@@ -374,7 +375,8 @@ const updateData = (portData) => {
       }
       break;
     case Effect.PaletteSlide:
-    case Effect.PaletteBounce: {
+    case Effect.PaletteBounce:
+    case Effect.Christmas: {
       if (!portData.colors || portData.colors.length !== 3) {
         portData.colors = [
           {
@@ -526,7 +528,8 @@ const renderConfig = (portDesignator, portData) => {
       break;
     }
     case Effect.PaletteSlide:
-    case Effect.PaletteBounce: {
+    case Effect.PaletteBounce:
+    case Effect.Christmas: {
       const title = document.createElement("h6");
       title.textContent = "Settings";
       node.appendChild(title);
@@ -679,6 +682,7 @@ document.querySelector("#save").addEventListener("click", async () => {
         case Effect.FunkyBeat:
         case Effect.PaletteSlide:
         case Effect.PaletteBounce:
+        case Effect.Christmas:
           return {
             colors: port.colors.map((c) => {
               return {

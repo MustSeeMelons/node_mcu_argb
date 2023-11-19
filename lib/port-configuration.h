@@ -7,7 +7,7 @@
 
 struct ExpandedDetails
 {
-    CRGB colors[5];
+    CRGB colors[configColorCount];
     int16_t speed;
 };
 

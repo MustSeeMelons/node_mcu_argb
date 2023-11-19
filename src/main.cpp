@@ -3,7 +3,6 @@
 #include "../lib/port-configuration.h"
 #include "../lib/effects.h"
 #include "../lib/effect-index.h"
-
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include "FS.h"
@@ -13,6 +12,9 @@
 #include "elapsedMillis.h"
 
 #define EEPROM_SIZE 4096
+
+// #define STATUS_LED D7
+// #define SENSE_PIN D8
 
 //// FastLed Things
 #define DI_PIN_ONE D1
@@ -227,6 +229,7 @@ void handleSinglePortLoad(PortConfiguration *port, JsonArray *ports)
   }
   case Effect::PaletteSlide:
   case Effect::PaletteBounce:
+  case Effect::Christmas:
   {
     JsonArray colors = obj.createNestedArray("colors");
 
@@ -410,6 +413,7 @@ void handleSave()
     break;
   case Effect::PaletteSlide:
   case Effect::PaletteBounce:
+  case Effect::Christmas:
     for (size_t i = 0; i < 3; i++)
     {
       auto color = request["colors"][i];
@@ -544,6 +548,7 @@ void assignPort(PortConfiguration *target, PortConfiguration *source)
     target->details.colors[1].b = source->details.colors[1].b;
   case Effect::PaletteSlide:
   case Effect::PaletteBounce:
+  case Effect::Christmas:
     target->details.expanded.colors[0].r = source->details.expanded.colors[0].r;
     target->details.expanded.colors[0].g = source->details.expanded.colors[0].g;
     target->details.expanded.colors[0].b = source->details.expanded.colors[0].b;
@@ -563,6 +568,7 @@ void assignPort(PortConfiguration *target, PortConfiguration *source)
 
 void launchAPMode()
 {
+  // digitalWrite(STATUS_LED, HIGH);
   // No SSID means we start in AP mode
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(ip, gateway, subnet);
@@ -573,6 +579,11 @@ void launchAPMode()
 
 void setup()
 {
+  // pinMode(SENSE_PIN, INPUT);
+  // pinMode(STATUS_LED, OUTPUT);
+
+  // digitalWrite(STATUS_LED, LOW);
+
   ourEEPROM->begin(EEPROM_SIZE);
 
   EEPROMPortData portData;
@@ -628,6 +639,7 @@ void setup()
   }
   else
   {
+    // digitalWrite(STATUS_LED, LOW);
     // Use saved credentials otherwise
     wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
     wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
@@ -640,8 +652,6 @@ void setup()
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED)
     {
-      delay(500);
-
       // In case we have invalid credentials - launch in AP mode after a while
       if (restartTimer > 20000)
       {
@@ -694,6 +704,7 @@ void processPort(PortConfiguration *port, void **effectPointer, CRGB leds[])
     break;
   case Effect::PaletteSlide:
   case Effect::PaletteBounce:
+  case Effect::Christmas:
     ((ExpandedEffect *)*effectPointer)->process(port->id, leds, port->details.expanded.speed, port->ledCount);
     break;
   default:

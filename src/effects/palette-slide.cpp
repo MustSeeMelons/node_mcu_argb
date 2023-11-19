@@ -1,5 +1,4 @@
 #include "../lib/effects.h"
-
 #include "elapsedMillis.h"
 
 static elapsedMillis stamp[portCount];
