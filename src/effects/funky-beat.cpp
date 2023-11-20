@@ -1,4 +1,4 @@
-#include "../lib/effects.h"
+#include "effects.h"
 
 static uint8_t calcBeatCount(uint8_t led_count)
 {

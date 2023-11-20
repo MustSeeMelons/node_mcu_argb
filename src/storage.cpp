@@ -1,4 +1,4 @@
-#include "../lib/storage.h"
+#include "storage.h"
 
 extern EEPROMClass *ourEEPROM;
 
@@ -18,12 +18,6 @@ void fillPortData(EEPROMPortData *portData)
 void savePortData(EEPROMPortData *portData)
 {
     ourEEPROM->put(0, *portData);
-}
-
-void saveVersion()
-{
-    uint32 offset = offsetof(EEPROMPortData, v);
-    ourEEPROM->put(offset, storageVersion);
 }
 
 void fillPaletteData(EEPROMPalette *paletteData)
@@ -58,8 +52,13 @@ void saveWifiData(EEPROMWifiData *wifiData)
     // Get initial offset
     int32 offset = sizeof(EEPROMPortData) + sizeof(EEPROMPalette);
 
+    // Save device id
     ourEEPROM->write(offset, wifiData->deviceId);
     offset += sizeof(wifiData->deviceId);
+
+    // Save storage version for wifi
+    ourEEPROM->write(offset, wifiData->storageVersion);
+    offset += sizeof(wifiData->storageVersion);
 
     // Save ssid
     saveEEPROMStringRecord(&offset, &wifiData->ssid);
@@ -80,6 +79,11 @@ void fillWifiData(EEPROMWifiData *wifiData)
     offset += sizeof(deviceId);
 
     wifiData->deviceId = deviceId;
+
+    uint32_t storageVersion = EEPROM.read(offset);
+    offset += sizeof(storageVersion);
+
+    wifiData->storageVersion = storageVersion;
 
     uint8_t ssidLength = EEPROM.read(offset);
 

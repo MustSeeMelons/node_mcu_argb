@@ -1,4 +1,4 @@
-#include "../lib/effects.h"
+#include "effects.h"
 
 void pingPong(uint8_t portId, CRGB leds[], CRGB color, uint8_t num_leds)
 {

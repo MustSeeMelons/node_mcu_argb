@@ -1,4 +1,4 @@
-#include "../lib/effects.h"
+#include "effects.h"
 
 static const uint8_t lineCount = 6;
 static const uint8_t lineElementCount = 2;

@@ -1,13 +1,13 @@
 #include <Arduino.h>
 #include <FastLED.h>
-#include "../lib/port-configuration.h"
-#include "../lib/effects.h"
-#include "../lib/effect-index.h"
+#include "port-configuration.h"
+#include "effects.h"
+#include "effect-index.h"
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
 #include "FS.h"
 #include "ArduinoJson.h"
-#include "../lib/storage.h"
+#include "storage.h"
 #include <EEPROM.h>
 #include "elapsedMillis.h"
 
@@ -29,7 +29,7 @@
 #define COLOR_ORDER GRB
 
 bool isRestart = false;
-elapsedMillis restartTimer;
+elapsedMillis restartTimer = 0;
 
 // Access point credentials
 const char *appSsid = "argb";
@@ -89,6 +89,12 @@ void *d1Pointer;
 void *d2Pointer;
 void *d5Pointer;
 void *d6Pointer;
+
+//// WiFi Stuff
+char ssid[64];     // = "Pukeko";
+char password[64]; // = "SeptiniKabaci1";
+
+ESP8266WebServer server(80);
 
 extern const uint8 coloredEffectCount;
 extern const uint8_t dualEffectCount;
@@ -153,12 +159,6 @@ void updateEffects()
   updateExtendedEffect(&PortD5, &d5Pointer);
   updateExtendedEffect(&PortD6, &d6Pointer);
 }
-
-//// WiFi Stuff
-char ssid[64];     // = "Pukeko";
-char password[64]; // = "SeptiniKabaci1";
-
-ESP8266WebServer server(80);
 
 String getContentType(String filename)
 { // convert the file extension to the MIME type
@@ -319,7 +319,7 @@ void handleWifi()
     return;
   }
 
-  StaticJsonDocument<256> request;
+  StaticJsonDocument<512> request;
   deserializeJson(request, server.arg("plain"));
 
   uint8_t deviceId = int(request["deviceId"]);
@@ -338,9 +338,8 @@ void handleWifi()
   wifiData.password.data = password;
   wifiData.password.length = passwordLength;
 
-  // Edge case when on a fresh startup we save only wifi settings
-  // Version is part of the port struct, lazy fix, but oh well
-  saveVersion();
+  wifiData.storageVersion = storageVersion;
+
   saveWifiData(&wifiData);
 
   server.send(200, "text/plain", "OK!");
@@ -359,7 +358,7 @@ void handleSave()
     return;
   }
 
-  StaticJsonDocument<1024> request;
+  StaticJsonDocument<2048> request;
   deserializeJson(request, server.arg("plain"));
 
   uint8_t portId = int(request["id"]);
@@ -491,7 +490,7 @@ void handlePalette()
     return;
   }
 
-  StaticJsonDocument<1024> request;
+  StaticJsonDocument<2048> request;
   deserializeJson(request, server.arg("plain"));
 
   uint8_t index = int(request["index"]);
@@ -576,12 +575,12 @@ void launchAPMode()
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(ip, gateway, subnet);
   WiFi.softAP(appSsid, appPassword, 5);
-
-  delay(2000);
 }
 
 void setup()
 {
+  Serial.begin(115200);
+
   // pinMode(SENSE_PIN, INPUT);
   // pinMode(STATUS_LED, OUTPUT);
 
@@ -602,21 +601,27 @@ void setup()
     FastLED.setBrightness(portData.brightness);
 
     fillPaletteData(&palette);
-
     fillWifiData(&wifiData);
   }
   else
   {
     FastLED.setBrightness(BRIGHTNESS);
 
-    // Set blank wifi & pass
-    wifiData.password.data = "";
-    wifiData.password.length = 0;
-    wifiData.ssid.data = "";
-    wifiData.ssid.length = 0;
-    wifiData.deviceId = 1;
+    // We might have saved wifi only
+    fillWifiData(&wifiData);
 
-    saveWifiData(&wifiData);
+    if (wifiData.storageVersion != storageVersion)
+    {
+      // Set blank wifi & pass
+      wifiData.password.data = "";
+      wifiData.password.length = 0;
+      wifiData.ssid.data = "";
+      wifiData.ssid.length = 0;
+      wifiData.deviceId = 1;
+      wifiData.storageVersion = storageVersion;
+
+      saveWifiData(&wifiData);
+    }
   }
 
   // Initialize fastled for each port
@@ -642,7 +647,6 @@ void setup()
   }
   else
   {
-    // digitalWrite(STATUS_LED, LOW);
     // Use saved credentials otherwise
     wifiData.ssid.data.toCharArray(ssid, wifiData.ssid.data.length() + 1);
     wifiData.password.data.toCharArray(password, wifiData.password.data.length() + 1);
@@ -661,6 +665,9 @@ void setup()
         launchAPMode();
         break;
       }
+
+      delay(100);
+      yield();
     }
   }
 
@@ -731,4 +738,6 @@ void loop()
   {
     ESP.restart();
   }
+
+  yield();
 }

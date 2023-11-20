@@ -16,12 +16,13 @@ struct EEPROMStringRecord
 // Wifi stuffs
 struct EEPROMWifiData
 {
+    uint32_t storageVersion;
     uint8_t deviceId;
     EEPROMStringRecord ssid;
     EEPROMStringRecord password;
 };
 
-// ARGB port configs
+// ARGB port configs, 88 bytes
 struct EEPROMPortData
 {
     PortConfiguration d1;
@@ -29,9 +30,10 @@ struct EEPROMPortData
     PortConfiguration d5;
     PortConfiguration d6;
     uint8_t brightness;
-    uint32 v;
+    uint32_t v;
 };
 
+// 63 bytes
 struct EEPROMPalette
 {
     CRGB colors[21];
@@ -50,7 +52,5 @@ void saveEEPROMStringRecord(int32 *offset, EEPROMStringRecord *record);
 void saveWifiData(EEPROMWifiData *wifiData);
 
 void fillWifiData(EEPROMWifiData *wifiData);
-
-void saveVersion();
 
 #endif

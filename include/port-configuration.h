@@ -21,8 +21,8 @@ union PortDetails
 struct PortConfiguration
 {
     uint8_t id;
-    uint16 ledCount;
-    uint16 effectId;
+    uint16_t ledCount;
+    uint16_t effectId;
     bool isEnabled;
     PortDetails details;
 };

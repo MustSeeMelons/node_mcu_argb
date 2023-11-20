@@ -1,13 +1,15 @@
 #ifndef definitions_h
 #define definitions_h
 
-const uint32 storageVersion = 11;
+#include <Arduino.h>
+
+const uint32_t storageVersion = 16;
 
 const uint8_t paletteColorCount = 21;
 
 const uint16 ledCountMax = 256;
 
-const uint8_t configColorCount = 5;
+const uint8_t configColorCount = 3;
 
 enum Effect
 {
@@ -24,7 +26,7 @@ enum Effect
 
 const uint8_t portCount = 4;
 
-enum PortDefinition
+enum PortDefinition : uint8_t
 {
     IdD1 = 0,
     IdD2 = 1,

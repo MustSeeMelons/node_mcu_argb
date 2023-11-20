@@ -1,5 +1,5 @@
-#include "../lib/effect-index.h"
-#include "../lib/effects.h"
+#include "effect-index.h"
+#include "effects.h"
 
 extern ColoredEffect pingPongEffect;
 extern ColoredEffect starsEffect;

@@ -1,4 +1,4 @@
-#include "../lib/effects.h"
+#include "effects.h"
 
 #include "elapsedMillis.h"
 
