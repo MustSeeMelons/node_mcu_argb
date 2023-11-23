@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-const uint32_t storageVersion = 16;
+const uint32_t storageVersion = 20;
 
 const uint8_t paletteColorCount = 21;
 

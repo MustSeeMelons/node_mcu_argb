@@ -13,8 +13,7 @@
 
 #define EEPROM_SIZE 4096
 
-// #define STATUS_LED D7
-// #define SENSE_PIN D8
+#define STATUS_LED D7
 
 //// FastLed Things
 #define DI_PIN_ONE D1
@@ -570,7 +569,7 @@ void assignPort(PortConfiguration *target, PortConfiguration *source)
 
 void launchAPMode()
 {
-  // digitalWrite(STATUS_LED, HIGH);
+  digitalWrite(STATUS_LED, HIGH);
   // No SSID means we start in AP mode
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(ip, gateway, subnet);
@@ -581,10 +580,9 @@ void setup()
 {
   Serial.begin(115200);
 
-  // pinMode(SENSE_PIN, INPUT);
-  // pinMode(STATUS_LED, OUTPUT);
+  pinMode(STATUS_LED, OUTPUT);
 
-  // digitalWrite(STATUS_LED, LOW);
+  digitalWrite(STATUS_LED, LOW);
 
   ourEEPROM->begin(EEPROM_SIZE);
 
